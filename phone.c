@@ -9,7 +9,11 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define N 1024
+
+asfa
+
 void die(char *s){ perror(s); exit(1);};
 void server(int port, char *option);
 void clnt(const char *address, int port, char *option);
