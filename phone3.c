@@ -11,21 +11,24 @@
 #include <string.h>
 #define N 1024
 #define s1 44100
-#define end_time 10
+#define end_time 1
 void die(char *s){ perror(s); exit(1);};
 void server(int port, char *option);
 void clnt(const char *address, int port, char *option);
 void print_option();
 void play_coloring();
 int main(int argc, char **argv){
-    if (argc < 2) die("Input port number or adress");
-    if (argc == 2){
-        if ( strcmp( argv[1], "h" ) == 0) print_option(); // when called help, print option.
-        else{
+    if (argc < 2) print_option();
+    else if (argc == 2){
+        if ( strcmp( argv[1], "h" ) == 0) print_option();
+        if(atoi(argv[1]) > 10000 && atoi(argv[1]) <= 65535){
             int port = atoi( argv[1] );
             char *option = "n";
             printf("option: none\n\n");
             server(port, option);
+        } else {
+            print_option();
+            printf("\n---port number should be a number from 10000 to 65535---\n");
         }
     }
     
@@ -43,8 +46,7 @@ int main(int argc, char **argv){
             char *option = "n"; 
             printf("option: none\n\n");
             clnt(address, port, option);
-        }
-        
+        } 
     }
     
     else if(argc == 4){
@@ -55,7 +57,6 @@ int main(int argc, char **argv){
             server(port, option);
         }
         else {
-            
             char *address = argv[1];
             int port = atoi( argv[2] );
             char *option = argv[3];
@@ -70,7 +71,6 @@ int main(int argc, char **argv){
     }
 }
 void server(int port, char *option){
-        
         play_coloring();
         int srv_s = socket(PF_INET, SOCK_STREAM, 0);
         if (srv_s == -1) die("server socket error");
@@ -113,7 +113,7 @@ void server(int port, char *option){
         
         short read_data[N], send_data[N];
         if ( strcmp(option , "r") * strcmp(option , "all") == 0 ){ // if option "r", recorded.raw would be created
-            int recorded = open("recorded.raw", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            int recorded = open("recorded_11me.raw", O_WRONLY | O_CREAT | O_TRUNC, 0644);
             short recorded_data[N];
             while(1){ 
                 int send_r = fread(send_data, sizeof(short), N, rec_pipe); //read my voice
@@ -126,7 +126,7 @@ void server(int port, char *option){
                 int recv_w = fwrite(read_data, sizeof(short), N, play_pipe); //play oponent's voice
                 if (recv_w == -1) die("fwrite_server");
                 if (recv_r == 0) break;
-                for (short i = 0 ; i < N ; i++) recorded_data[i] = (send_data[i] + read_data[i]) / 2;
+                for (short i = 0 ; i < N ; i++) recorded_data[i] = (10*send_data[i] + read_data[i]) / 11;
                 write(recorded, recorded_data, sizeof(short)*N);
             }          
             close(recorded);
@@ -151,7 +151,7 @@ void server(int port, char *option){
         printf("call terminated");
         close(cs);
 }
-void clnt(const char*address, int port, char *option){
+void clnt(const char *address, int port, char *option){
     
         int clnt_s = socket(PF_INET, SOCK_STREAM, 0);
         if (clnt_s == -1) die("client socket error");
@@ -170,7 +170,7 @@ void clnt(const char*address, int port, char *option){
         if ( play_pipe == NULL ) die ("wrong pipe command");  
         short read_data[N], send_data[N];
         if ( strcmp(option , "r") * strcmp(option , "all") == 0){ // if option "r", recorded.raw would be created
-            int recorded = open("recorded.raw", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            int recorded = open("recorded_11me.raw", O_WRONLY | O_CREAT | O_TRUNC, 0644);
             short recorded_data[N];
             while(1){ 
                 int send_r = fread(send_data, sizeof(short), N, rec_pipe); //read my voice
@@ -184,7 +184,7 @@ void clnt(const char*address, int port, char *option){
                 if (recv_w == -1) die("fwrite_server");
                 if (recv_r == 0) break;
             
-                for (short i = 0 ; i < N ; i++) recorded_data[i] = (send_data[i] + read_data[i]) / 2;
+                for (short i = 0 ; i < N ; i++) recorded_data[i] = (11*send_data[i] + read_data[i]) / 11;
                 write(recorded, recorded_data, sizeof(short)*N);
             }          
             close(recorded);
