@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#define N 10
+#define N 1024
 #define s1 44100
 #define end_time 10
 void die(char *s){ perror(s); exit(1);};

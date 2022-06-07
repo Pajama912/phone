@@ -1,38 +1,31 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#define N 1024
 
+#define N 4096
 
 void die(char *s){ perror(s); exit(1);};
 void server(int port, char *option);
 void clnt(const char *address, int port, char *option);
 void print_option();
-void sum(char *, char *);
-
 int main(int argc, char **argv){
-
-    // FILE *read_music = popen("play -b 16 -c 1 -e s -r 44100 merry_go_round.raw", "r");
-    // FILE *write_music = popen("play -t raw -b 16 -c 1 -e s -r 44100 -", "w");
-
-    // short read_data[1];
-    // while(fread(0, read_data, sizeof(short))) write(1, read_data, sizeof(short));
+    
 
     if (argc < 2) die("Input port number or adress");
-
     if (argc == 2){
         if ( strcmp( argv[1], "option" ) == 0) print_option();
         else{
+            short read_data[1];
+            while(read(0, read_data, sizeof(short))) write(1, read_data, sizeof(short));
+
             int port = atoi( argv[1] );
             char *option = "n";
             printf("option: none\n\n");
@@ -67,6 +60,7 @@ int main(int argc, char **argv){
         clnt(address, port, option);
 
     } 
+
 }
 
 void server(int port, char *option){
@@ -115,10 +109,7 @@ void server(int port, char *option){
         short read_data[N], send_data[N];
 
         if ( strcmp(option , "r") == 0){ // if option "r", recorded.raw would be created
-            int recorded_mine = open("recorded_mine", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            int recorded_oponent = open("recorded_oponent", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            // int recorded = open("recorded.raw", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            short recorded_data[N];
+            int recorded = open("recorded.raw", O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
             while(1){ 
                 int send_r = fread(send_data, sizeof(short), N, rec_pipe); //read my voice
@@ -134,15 +125,11 @@ void server(int port, char *option){
                 if (recv_w == -1) die("fwrite_server");
 
                 if (recv_r == 0) break;
-
-                // for (int i = 0 ; i < N ; i++) recorded_data[i] = send_data[i] + read_data[i];
-                write(recorded_mine, recorded_data, sizeof(short)*N);
-                write(recorded_oponent, read_data, sizeof(short)*N);
-
+            
+                // write(recorded, send_data, sizeof(short)*N);
+                write(recorded, read_data, sizeof(short)*N);
             }          
-            close(recorded_mine);
-            close(recorded_oponent);
-
+            close(recorded);
         }
 
         else{
@@ -240,17 +227,3 @@ void print_option(){
     printf("\nex) if server: ./phone <port> <option>\n");
     printf("ex) if client: ./phone <address> <port> <option>\n");
 }
-
-void sum(char *mine, char *oponent){
-    FILE *mine = fopen(mine, "r");
-    FILE *opponent = fopen(oponent, "r");
-    short left, right, sum[1];
-
-    while(1){
-        if ( fscanf(mine, "%hd", &left) == -1) break;
-        if ( fscanf(opponent, "%hd", &right) == -1) break;
-
-        sum[0] = left + right;
-        write(1, sum, 2);
-    }
-};
